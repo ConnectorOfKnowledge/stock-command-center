@@ -13,6 +13,7 @@
             --danger: #ff4444;
             --success: #00c853;
             --warning: #ffbb33;
+            --tooltip-bg: #333;
         }
 
         body {
@@ -42,7 +43,11 @@
         }
         
         .input-group { margin-bottom: 15px; position: relative; }
-        label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; }
+        
+        label { 
+            display: flex; align-items: center; 
+            font-size: 0.8rem; color: #888; margin-bottom: 5px; 
+        }
         
         input, select { 
             width: 100%; padding: 8px; 
@@ -53,8 +58,6 @@
 
         select { border: 1px solid var(--accent); cursor: pointer; }
         select:focus { outline: none; border-color: #fff; }
-
-        /* Highlight the ATR Input */
         #atrValue { border-color: var(--warning); color: var(--warning); }
         
         .result-box {
@@ -66,6 +69,60 @@
         .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; }
         .big-number { font-size: 1.5rem; font-weight: bold; color: var(--success); }
         .calendar-container { height: 100%; width: 100%; }
+
+        /* --- TOOLTIP STYLING (THE EDUCATOR) --- */
+        .info-icon {
+            margin-left: 6px;
+            cursor: help;
+            font-size: 0.9rem;
+            color: #666;
+            transition: color 0.2s;
+        }
+        .info-icon:hover { color: var(--accent); }
+
+        /* The Tooltip Card */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background-color: var(--tooltip-bg);
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%; /* Position above */
+            left: 50%;
+            margin-left: -110px; /* Center it */
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
+            border: 1px solid #555;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Arrow for Tooltip */
+        .tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--tooltip-bg) transparent transparent transparent;
+        }
 
     </style>
 </head>
@@ -83,7 +140,20 @@
             <h2>📡 The Signal: Risk Ops</h2>
             
             <div class="input-group">
-                <label style="color: var(--accent);">Active Intel (Switch Mode)</label>
+                <label style="color: var(--accent);">
+                    Active Intel (Switch Mode)
+                    <div class="tooltip">
+                        <span class="info-icon">ⓘ</span>
+                        <span class="tooltip-text">
+                            <strong>Mission Selector:</strong><br>
+                            • RSI: Momentum (Overbought > 70)<br>
+                            • ATR: Volatility (For Stop Loss)<br>
+                            • MACD: Trend Confirmation<br>
+                            • VWAP: Who controls volume?<br>
+                            • S/R: Automatic Bounce Levels
+                        </span>
+                    </div>
+                </label>
                 <select id="indicatorMode" onchange="loadChart()">
                     <option value="rsi">RSI (Momentum)</option>
                     <option value="atr">ATR (Volatility / Stops)</option>
@@ -107,17 +177,46 @@
             </div>
 
             <div class="input-group">
-                <label style="color: var(--warning);">ATR Value (Switch to ATR Mode)</label>
+                <label style="color: var(--warning);">
+                    ATR Value (Switch to ATR Mode)
+                    <div class="tooltip">
+                        <span class="info-icon">ⓘ</span>
+                        <span class="tooltip-text">
+                            <strong>Average True Range:</strong><br>
+                            Measures the "noise" or volatility of the stock. We use this to set a Stop Loss that gives the trade room to breathe without getting shaken out.
+                        </span>
+                    </div>
+                </label>
                 <input type="number" id="atrValue" placeholder="e.g. 1.25" step="0.01" oninput="calculateRisk()">
             </div>
             
             <div class="input-group">
-                <label>Stop Loss (Auto-Calc)</label>
+                <label>
+                    Stop Loss (Auto-Calc)
+                    <div class="tooltip">
+                        <span class="info-icon">ⓘ</span>
+                        <span class="tooltip-text">
+                            <strong>The Safety Net:</strong><br>
+                            Automatically calculated as [Entry - 2x ATR].<br>
+                            This places your exit point just outside the normal daily fluctuation range.
+                        </span>
+                    </div>
+                </label>
                 <input type="number" id="stopPrice" value="48.00" step="0.01" oninput="manualStop()">
             </div>
 
             <div class="input-group">
-                <label>Risk %</label>
+                <label>
+                    Risk %
+                    <div class="tooltip">
+                        <span class="info-icon">ⓘ</span>
+                        <span class="tooltip-text">
+                            <strong>Capital Preservation:</strong><br>
+                            Professional traders risk 1-2% per trade.<br>
+                            If this trade hits your Stop Loss, you will only lose this percentage of your total account.
+                        </span>
+                    </div>
+                </label>
                 <input type="number" id="riskPercent" value="1.0" step="0.1" oninput="calculateRisk()">
             </div>
 
@@ -169,11 +268,11 @@
             } else if(mode === 'macd') {
                 studies = ["MASimple@tv-basicstudies", "MACD@tv-basicstudies"]; 
             } else if(mode === 'vwap') {
-                studies = ["VWAP@tv-basicstudies"]; // VWAP often needs to be alone to be clear
+                studies = ["VWAP@tv-basicstudies"]; 
             } else if(mode === 'sr') {
-                studies = ["PivotPointsStandard@tv-basicstudies", "MASimple@tv-basicstudies"]; // Pivot Points + SMA
+                studies = ["PivotPointsStandard@tv-basicstudies", "MASimple@tv-basicstudies"]; 
             } else if(mode === 'bb') {
-                studies = ["BB@tv-basicstudies"]; // Bollinger Bands
+                studies = ["BB@tv-basicstudies"]; 
             }
 
             document.getElementById('tradingview_chart').innerHTML = "";
