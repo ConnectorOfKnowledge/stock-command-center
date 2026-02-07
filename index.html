@@ -13,7 +13,7 @@
             --danger: #ff4444;
             --success: #00c853;
             --warning: #ffbb33;
-            --tooltip-bg: #333;
+            --tooltip-bg: #222;
         }
 
         body {
@@ -26,14 +26,14 @@
             overflow: hidden;
         }
 
-        .chart-panel { border-right: 1px solid #333; height: 100vh; }
-        .tools-panel { display: grid; grid-template-rows: 40% 60%; height: 100vh; }
+        .chart-panel { border-right: 1px solid #333; height: 100vh; position: relative; z-index: 1; }
+        .tools-panel { display: grid; grid-template-rows: 40% 60%; height: 100vh; position: relative; z-index: 2; }
 
         .risk-calculator {
             padding: 20px;
             background-color: var(--panel-bg);
             border-bottom: 1px solid #333;
-            overflow-y: auto;
+            overflow-y: auto; /* Ensures scrolling doesn't hide tooltips */
         }
 
         h2 { 
@@ -70,17 +70,26 @@
         .big-number { font-size: 1.5rem; font-weight: bold; color: var(--success); }
         .calendar-container { height: 100%; width: 100%; }
 
-        /* --- TOOLTIP STYLING (THE EDUCATOR) --- */
+        /* --- TOOLTIP STYLING (FIXED Z-INDEX) --- */
         .info-icon {
-            margin-left: 6px;
+            margin-left: 8px;
             cursor: help;
-            font-size: 0.9rem;
+            font-size: 1rem;
             color: #666;
-            transition: color 0.2s;
+            border: 1px solid #444;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
-        .info-icon:hover { color: var(--accent); }
+        .info-icon:hover { 
+            color: var(--accent); 
+            border-color: var(--accent);
+        }
 
-        /* The Tooltip Card */
         .tooltip {
             position: relative;
             display: inline-block;
@@ -88,31 +97,34 @@
 
         .tooltip .tooltip-text {
             visibility: hidden;
-            width: 220px;
+            width: 240px;
             background-color: var(--tooltip-bg);
-            color: #fff;
+            color: #eee;
             text-align: left;
             border-radius: 6px;
-            padding: 10px;
+            padding: 12px;
+            
+            /* POSITIONING FIX */
             position: absolute;
-            z-index: 10;
-            bottom: 125%; /* Position above */
+            z-index: 9999; /* NUCLEAR OPTION */
+            bottom: 135%; 
             left: 50%;
-            margin-left: -110px; /* Center it */
+            transform: translateX(-50%); /* Better Centering */
+            
             opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 0.75rem;
-            line-height: 1.4;
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.5);
-            border: 1px solid #555;
+            transition: opacity 0.2s;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            box-shadow: 0px 8px 20px rgba(0,0,0,0.8);
+            border: 1px solid #444;
         }
 
         .tooltip:hover .tooltip-text {
             visibility: visible;
             opacity: 1;
         }
-
-        /* Arrow for Tooltip */
+        
+        /* Arrow */
         .tooltip .tooltip-text::after {
             content: "";
             position: absolute;
@@ -143,14 +155,14 @@
                 <label style="color: var(--accent);">
                     Active Intel (Switch Mode)
                     <div class="tooltip">
-                        <span class="info-icon">ⓘ</span>
+                        <span class="info-icon">i</span>
                         <span class="tooltip-text">
-                            <strong>Mission Selector:</strong><br>
-                            • RSI: Momentum (Overbought > 70)<br>
-                            • ATR: Volatility (For Stop Loss)<br>
-                            • MACD: Trend Confirmation<br>
-                            • VWAP: Who controls volume?<br>
-                            • S/R: Automatic Bounce Levels
+                            <strong style="color:var(--accent)">MISSION SELECTOR</strong><br>
+                            • <strong>RSI:</strong> Momentum (Overbought > 70)<br>
+                            • <strong>ATR:</strong> Volatility (For Stop Loss)<br>
+                            • <strong>MACD:</strong> Trend Confirmation<br>
+                            • <strong>VWAP:</strong> Who controls volume?<br>
+                            • <strong>S/R:</strong> Automatic Bounce Levels
                         </span>
                     </div>
                 </label>
@@ -180,10 +192,11 @@
                 <label style="color: var(--warning);">
                     ATR Value (Switch to ATR Mode)
                     <div class="tooltip">
-                        <span class="info-icon">ⓘ</span>
+                        <span class="info-icon">i</span>
                         <span class="tooltip-text">
-                            <strong>Average True Range:</strong><br>
-                            Measures the "noise" or volatility of the stock. We use this to set a Stop Loss that gives the trade room to breathe without getting shaken out.
+                            <strong style="color:var(--warning)">AVERAGE TRUE RANGE</strong><br>
+                            Measures the "noise" or volatility of the stock.<br><br>
+                            <strong>Why?</strong> We use this to set a Stop Loss that gives the trade room to breathe without getting shaken out by random market wiggles.
                         </span>
                     </div>
                 </label>
@@ -194,10 +207,11 @@
                 <label>
                     Stop Loss (Auto-Calc)
                     <div class="tooltip">
-                        <span class="info-icon">ⓘ</span>
+                        <span class="info-icon">i</span>
                         <span class="tooltip-text">
-                            <strong>The Safety Net:</strong><br>
-                            Automatically calculated as [Entry - 2x ATR].<br>
+                            <strong style="color:var(--danger)">THE SAFETY NET</strong><br>
+                            Automatically calculated as:<br>
+                            <strong>[Entry Price] - [2x ATR]</strong><br><br>
                             This places your exit point just outside the normal daily fluctuation range.
                         </span>
                     </div>
@@ -209,10 +223,10 @@
                 <label>
                     Risk %
                     <div class="tooltip">
-                        <span class="info-icon">ⓘ</span>
+                        <span class="info-icon">i</span>
                         <span class="tooltip-text">
-                            <strong>Capital Preservation:</strong><br>
-                            Professional traders risk 1-2% per trade.<br>
+                            <strong style="color:var(--success)">CAPITAL PRESERVATION</strong><br>
+                            Professional traders risk 1-2% per trade.<br><br>
                             If this trade hits your Stop Loss, you will only lose this percentage of your total account.
                         </span>
                     </div>
