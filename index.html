@@ -12,34 +12,22 @@
             --accent: #2962ff;
             --danger: #ff4444;
             --success: #00c853;
+            --warning: #ffbb33;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            margin: 0; padding: 0;
+            background-color: var(--bg-color); color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             height: 100vh;
             display: grid;
-            grid-template-columns: 70% 30%; /* The 70/30 Split */
+            grid-template-columns: 70% 30%;
             overflow: hidden;
         }
 
-        /* LEFT PANEL: CHART */
-        .chart-panel {
-            border-right: 1px solid #333;
-            height: 100vh;
-        }
+        .chart-panel { border-right: 1px solid #333; height: 100vh; }
+        .tools-panel { display: grid; grid-template-rows: 40% 60%; height: 100vh; }
 
-        /* RIGHT PANEL: TOOLS */
-        .tools-panel {
-            display: grid;
-            grid-template-rows: 40% 60%; /* Risk Calc top, Calendar bottom */
-            height: 100vh;
-        }
-
-        /* RISK CALCULATOR STYLING */
         .risk-calculator {
             padding: 20px;
             background-color: var(--panel-bg);
@@ -48,44 +36,32 @@
         }
 
         h2 { 
-            margin-top: 0; 
-            font-size: 1.2rem; 
-            border-bottom: 1px solid #444; 
-            padding-bottom: 10px;
-            /* New Tactical Styling */
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: var(--accent); 
+            margin-top: 0; font-size: 1.2rem; 
+            border-bottom: 1px solid #444; padding-bottom: 10px;
+            letter-spacing: 1px; text-transform: uppercase; color: var(--accent); 
         }
         
-        .input-group { margin-bottom: 15px; }
+        .input-group { margin-bottom: 15px; position: relative; }
         label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; }
+        
         input { 
-            width: 100%; 
-            padding: 8px; 
-            background: #333; 
-            border: 1px solid #444; 
-            color: white; 
-            border-radius: 4px;
-            box-sizing: border-box; 
+            width: 100%; padding: 8px; 
+            background: #333; border: 1px solid #444; 
+            color: white; border-radius: 4px; box-sizing: border-box; 
         }
+
+        /* Highlight the ATR Input */
+        #atrValue { border-color: var(--warning); color: var(--warning); }
         
         .result-box {
-            background: #2a2a2a;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
+            background: #2a2a2a; padding: 15px;
+            border-radius: 8px; margin-top: 20px;
             border-left: 4px solid var(--accent);
         }
         
         .result-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; }
         .big-number { font-size: 1.5rem; font-weight: bold; color: var(--success); }
-
-        /* CALENDAR CONTAINER */
-        .calendar-container {
-            height: 100%;
-            width: 100%;
-        }
+        .calendar-container { height: 100%; width: 100%; }
 
     </style>
 </head>
@@ -99,7 +75,7 @@
             new TradingView.widget({
                 "autosize": true,
                 "symbol": "NASDAQ:TQQQ",
-                "interval": "240", // 4 Hours
+                "interval": "240",
                 "timezone": "America/New_York",
                 "theme": "dark",
                 "style": "1",
@@ -109,17 +85,17 @@
                 "hide_side_toolbar": false,
                 "allow_symbol_change": true,
                 "studies": [
-                    "MASimple@tv-basicstudies", // 50 SMA 
-                    "RSI@tv-basicstudies"       // RSI
+                    "MASimple@tv-basicstudies", 
+                    "RSI@tv-basicstudies",
+                    "ATR@tv-basicstudies" // ADDED ATR INDICATOR
                 ],
                 "container_id": "tradingview_chart"
             });
             </script>
         </div>
-        </div>
+    </div>
 
     <div class="tools-panel">
-        
         <div class="risk-calculator">
             <h2>📡 The Signal: Risk Ops</h2>
             
@@ -132,29 +108,34 @@
                 <label>Entry Price ($)</label>
                 <input type="number" id="entryPrice" value="50.00" step="0.01" oninput="calculateRisk()">
             </div>
+
+            <div class="input-group">
+                <label style="color: var(--warning);">ATR Value (From Chart)</label>
+                <input type="number" id="atrValue" placeholder="e.g. 1.25" step="0.01" oninput="calculateRisk()">
+            </div>
             
             <div class="input-group">
-                <label>Stop Loss Price ($)</label>
-                <input type="number" id="stopPrice" value="48.00" step="0.01" oninput="calculateRisk()">
+                <label>Stop Loss (Auto-Calc)</label>
+                <input type="number" id="stopPrice" value="48.00" step="0.01" oninput="manualStop()">
             </div>
 
             <div class="input-group">
-                <label>Risk % (1-2% recommended)</label>
+                <label>Risk %</label>
                 <input type="number" id="riskPercent" value="1.0" step="0.1" oninput="calculateRisk()">
             </div>
 
             <div class="result-box">
                 <div class="result-row">
-                    <span>Max Loss Allowed:</span>
-                    <span id="maxLossDisplay">$100.00</span>
+                    <span>Max Loss:</span>
+                    <span id="maxLossDisplay">$0.00</span>
                 </div>
                 <div class="result-row">
                     <span>Shares to Buy:</span>
-                    <span class="big-number" id="sharesDisplay">50</span>
+                    <span class="big-number" id="sharesDisplay">0</span>
                 </div>
                 <div class="result-row">
                     <span>Position Size:</span>
-                    <span id="positionDisplay">$2,500.00</span>
+                    <span id="positionDisplay">$0.00</span>
                 </div>
             </div>
         </div>
@@ -178,16 +159,24 @@
     </div>
 
     <script>
-        // Simple Logic for Risk Calculator
+        // 1. If user types in ATR, we auto-calculate the Stop Loss
         function calculateRisk() {
             let account = parseFloat(document.getElementById('accountSize').value) || 0;
             let entry = parseFloat(document.getElementById('entryPrice').value) || 0;
-            let stop = parseFloat(document.getElementById('stopPrice').value) || 0;
             let riskPct = parseFloat(document.getElementById('riskPercent').value) || 0;
+            let atr = parseFloat(document.getElementById('atrValue').value) || 0;
+            
+            // If ATR is present, update Stop Price automatically (2x ATR)
+            if (atr > 0) {
+                let suggestedStop = entry - (2 * atr);
+                document.getElementById('stopPrice').value = suggestedStop.toFixed(2);
+            }
+
+            let stop = parseFloat(document.getElementById('stopPrice').value) || 0;
 
             if(entry <= stop) {
-                document.getElementById('sharesDisplay').innerText = "ERROR";
-                document.getElementById('positionDisplay').innerText = "Stop must be below Entry";
+                document.getElementById('sharesDisplay').innerText = "WAIT";
+                document.getElementById('positionDisplay').innerText = "Stop > Entry";
                 return;
             }
 
@@ -199,6 +188,12 @@
             document.getElementById('maxLossDisplay').innerText = "$" + maxLossAmount.toFixed(2);
             document.getElementById('sharesDisplay').innerText = shares;
             document.getElementById('positionDisplay').innerText = "$" + positionSize.toLocaleString("en-US", {minimumFractionDigits: 2});
+        }
+
+        // 2. If user manually changes Stop Loss, clear the ATR field so it doesn't fight back
+        function manualStop() {
+            document.getElementById('atrValue').value = ""; // Clear ATR
+            calculateRisk(); // Recalculate based on manual stop
         }
         
         calculateRisk();
