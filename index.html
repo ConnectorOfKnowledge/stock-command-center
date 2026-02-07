@@ -44,11 +44,15 @@
         .input-group { margin-bottom: 15px; position: relative; }
         label { display: block; font-size: 0.8rem; color: #888; margin-bottom: 5px; }
         
-        input { 
+        input, select { 
             width: 100%; padding: 8px; 
             background: #333; border: 1px solid #444; 
             color: white; border-radius: 4px; box-sizing: border-box; 
+            font-size: 1rem;
         }
+
+        select { border: 1px solid var(--accent); cursor: pointer; }
+        select:focus { outline: none; border-color: #fff; }
 
         /* Highlight the ATR Input */
         #atrValue { border-color: var(--warning); color: var(--warning); }
@@ -71,27 +75,6 @@
         <div class="tradingview-widget-container" style="height:100%;width:100%">
             <div id="tradingview_chart" style="height:100%;width:100%"></div>
             <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-            <script type="text/javascript">
-            new TradingView.widget({
-                "autosize": true,
-                "symbol": "NASDAQ:TQQQ",
-                "interval": "240",
-                "timezone": "America/New_York",
-                "theme": "dark",
-                "style": "1",
-                "locale": "en",
-                "toolbar_bg": "#f1f3f6",
-                "enable_publishing": false,
-                "hide_side_toolbar": false,
-                "allow_symbol_change": true,
-                "studies": [
-                    "MASimple@tv-basicstudies", 
-                    "RSI@tv-basicstudies",
-                    "ATR@tv-basicstudies" // ADDED ATR INDICATOR
-                ],
-                "container_id": "tradingview_chart"
-            });
-            </script>
         </div>
     </div>
 
@@ -99,6 +82,20 @@
         <div class="risk-calculator">
             <h2>📡 The Signal: Risk Ops</h2>
             
+            <div class="input-group">
+                <label style="color: var(--accent);">Active Intel (Switch Mode)</label>
+                <select id="indicatorMode" onchange="loadChart()">
+                    <option value="rsi">RSI (Momentum)</option>
+                    <option value="atr">ATR (Volatility / Stops)</option>
+                    <option value="macd">MACD (Trend Confirmation)</option>
+                    <option value="vwap">🌊 VWAP (Volume Trend)</option>
+                    <option value="sr">🏰 S/R (Pivot Points)</option>
+                    <option value="bb">🎯 Bollinger (Overbought/Sold)</option>
+                </select>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
+
             <div class="input-group">
                 <label>Account Size ($)</label>
                 <input type="number" id="accountSize" value="10000" oninput="calculateRisk()">
@@ -110,7 +107,7 @@
             </div>
 
             <div class="input-group">
-                <label style="color: var(--warning);">ATR Value (From Chart)</label>
+                <label style="color: var(--warning);">ATR Value (Switch to ATR Mode)</label>
                 <input type="number" id="atrValue" placeholder="e.g. 1.25" step="0.01" oninput="calculateRisk()">
             </div>
             
@@ -159,14 +156,52 @@
     </div>
 
     <script>
-        // 1. If user types in ATR, we auto-calculate the Stop Loss
+        // --- 1. CHART LOGIC ---
+        function loadChart() {
+            let mode = document.getElementById('indicatorMode').value;
+            let studies = [];
+
+            // Define Study Packs
+            if(mode === 'rsi') {
+                studies = ["MASimple@tv-basicstudies", "RSI@tv-basicstudies"]; 
+            } else if(mode === 'atr') {
+                studies = ["MASimple@tv-basicstudies", "ATR@tv-basicstudies"]; 
+            } else if(mode === 'macd') {
+                studies = ["MASimple@tv-basicstudies", "MACD@tv-basicstudies"]; 
+            } else if(mode === 'vwap') {
+                studies = ["VWAP@tv-basicstudies"]; // VWAP often needs to be alone to be clear
+            } else if(mode === 'sr') {
+                studies = ["PivotPointsStandard@tv-basicstudies", "MASimple@tv-basicstudies"]; // Pivot Points + SMA
+            } else if(mode === 'bb') {
+                studies = ["BB@tv-basicstudies"]; // Bollinger Bands
+            }
+
+            document.getElementById('tradingview_chart').innerHTML = "";
+
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": "NASDAQ:TQQQ",
+                "interval": "240",
+                "timezone": "America/New_York",
+                "theme": "dark",
+                "style": "1",
+                "locale": "en",
+                "toolbar_bg": "#f1f3f6",
+                "enable_publishing": false,
+                "hide_side_toolbar": false,
+                "allow_symbol_change": true,
+                "studies": studies, 
+                "container_id": "tradingview_chart"
+            });
+        }
+
+        // --- 2. RISK LOGIC ---
         function calculateRisk() {
             let account = parseFloat(document.getElementById('accountSize').value) || 0;
             let entry = parseFloat(document.getElementById('entryPrice').value) || 0;
             let riskPct = parseFloat(document.getElementById('riskPercent').value) || 0;
             let atr = parseFloat(document.getElementById('atrValue').value) || 0;
             
-            // If ATR is present, update Stop Price automatically (2x ATR)
             if (atr > 0) {
                 let suggestedStop = entry - (2 * atr);
                 document.getElementById('stopPrice').value = suggestedStop.toFixed(2);
@@ -190,12 +225,12 @@
             document.getElementById('positionDisplay').innerText = "$" + positionSize.toLocaleString("en-US", {minimumFractionDigits: 2});
         }
 
-        // 2. If user manually changes Stop Loss, clear the ATR field so it doesn't fight back
         function manualStop() {
-            document.getElementById('atrValue').value = ""; // Clear ATR
-            calculateRisk(); // Recalculate based on manual stop
+            document.getElementById('atrValue').value = ""; 
+            calculateRisk();
         }
         
+        loadChart();
         calculateRisk();
     </script>
 </body>
